@@ -35,12 +35,16 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden items-center gap-3 md:flex">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-            <Button variant="hero" size="sm">
-              Get Started
-            </Button>
+            <a href="/signin">
+              <Button variant="ghost" size="sm">
+                Sign In
+              </Button>
+            </a>
+            <a href="/signup">
+              <Button variant="hero" size="sm">
+                Get Started
+              </Button>
+            </a>
           </div>
 
           {/* Mobile Menu Toggle */}
