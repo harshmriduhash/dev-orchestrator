@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -135,16 +135,16 @@ const AuthForm = ({ mode }: AuthFormProps) => {
             {mode === 'signin' ? (
               <>
                 Don't have an account?{' '}
-                <a href="/signup" className="text-primary hover:underline">
+                <Link to="/signup" className="text-primary hover:underline">
                   Sign up
-                </a>
+                </Link>
               </>
             ) : (
               <>
                 Already have an account?{' '}
-                <a href="/signin" className="text-primary hover:underline">
+                <Link to="/signin" className="text-primary hover:underline">
                   Sign in
-                </a>
+                </Link>
               </>
             )}
           </div>

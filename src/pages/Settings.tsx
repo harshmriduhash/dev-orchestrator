@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -8,17 +8,20 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { User, Bell, Shield, Key, Loader2 } from 'lucide-react';
 
 const Settings = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { data: profileData, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
+
   const [profile, setProfile] = useState({
-    fullName: user?.user_metadata?.full_name || '',
-    email: user?.email || '',
+    fullName: '',
+    email: '',
     company: '',
   });
+
   const [notifications, setNotifications] = useState({
     emailOnComplete: true,
     emailOnFail: true,
@@ -26,13 +29,38 @@ const Settings = () => {
     weeklyDigest: true,
   });
 
+  useEffect(() => {
+    if (profileData) {
+      setProfile({
+        fullName: profileData.full_name || '',
+        email: user?.email || '',
+        company: profileData.company || '',
+      });
+    } else if (user) {
+      setProfile({
+        fullName: user.user_metadata?.full_name || '',
+        email: user.email || '',
+        company: '',
+      });
+    }
+  }, [profileData, user]);
+
   const handleProfileUpdate = async () => {
-    setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoading(false);
-    toast.success('Profile updated successfully!');
+    updateProfile.mutate({
+      full_name: profile.fullName,
+      company: profile.company,
+    });
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -117,8 +145,12 @@ const Settings = () => {
               </div>
 
               <div className="flex justify-end">
-                <Button variant="hero" onClick={handleProfileUpdate} disabled={loading}>
-                  {loading ? (
+                <Button 
+                  variant="hero" 
+                  onClick={handleProfileUpdate} 
+                  disabled={updateProfile.isPending}
+                >
+                  {updateProfile.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Saving...

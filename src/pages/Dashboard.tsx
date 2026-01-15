@@ -3,53 +3,39 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import StatsCard from '@/components/dashboard/StatsCard';
 import IssuesList from '@/components/dashboard/IssuesList';
 import ActivityChart from '@/components/dashboard/ActivityChart';
-import { GitBranch, GitPullRequest, CheckCircle2, Clock } from 'lucide-react';
-
-// Demo data for the dashboard
-const demoIssues = [
-  {
-    id: '1',
-    title: 'Add user authentication flow',
-    repo: 'acme/web-app',
-    status: 'completed' as const,
-    riskLevel: 'medium' as const,
-    createdAt: '2 hours ago',
-  },
-  {
-    id: '2',
-    title: 'Fix API rate limiting bug',
-    repo: 'acme/api-gateway',
-    status: 'coding' as const,
-    riskLevel: 'high' as const,
-    createdAt: '3 hours ago',
-  },
-  {
-    id: '3',
-    title: 'Update README documentation',
-    repo: 'acme/docs',
-    status: 'reviewing' as const,
-    riskLevel: 'low' as const,
-    createdAt: '5 hours ago',
-  },
-  {
-    id: '4',
-    title: 'Implement dark mode toggle',
-    repo: 'acme/web-app',
-    status: 'planning' as const,
-    riskLevel: 'low' as const,
-    createdAt: '6 hours ago',
-  },
-  {
-    id: '5',
-    title: 'Refactor database queries',
-    repo: 'acme/backend',
-    status: 'pending' as const,
-    riskLevel: 'medium' as const,
-    createdAt: '8 hours ago',
-  },
-];
+import { GitBranch, GitPullRequest, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { useRepos } from '@/hooks/useRepos';
+import { useIssues, useIssueStats } from '@/hooks/useIssues';
+import { usePRStats } from '@/hooks/usePullRequests';
+import { formatDistanceToNow } from 'date-fns';
 
 const Dashboard = () => {
+  const { data: repos, isLoading: reposLoading } = useRepos();
+  const { data: issues, isLoading: issuesLoading } = useIssues();
+  const { data: issueStats } = useIssueStats();
+  const { data: prStats } = usePRStats();
+
+  const formattedIssues = issues?.map(issue => ({
+    id: issue.id,
+    title: issue.issue_title,
+    repo: issue.repo_name || 'Unknown',
+    status: (issue.status as 'pending' | 'planning' | 'coding' | 'reviewing' | 'completed' | 'failed') || 'pending',
+    riskLevel: (issue.risk_level as 'low' | 'medium' | 'high') || 'low',
+    createdAt: formatDistanceToNow(new Date(issue.created_at), { addSuffix: true }),
+  })) || [];
+
+  const isLoading = reposLoading || issuesLoading;
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -69,33 +55,33 @@ const Dashboard = () => {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Connected Repos"
-            value={12}
-            change="+2 this week"
+            value={repos?.length || 0}
+            change={repos?.length ? `${repos.filter(r => r.is_active).length} active` : 'None yet'}
             changeType="positive"
             icon={GitBranch}
             delay={0}
           />
           <StatsCard
             title="Issues Processed"
-            value={147}
-            change="+23% vs last week"
+            value={issueStats?.total || 0}
+            change={issueStats?.completed ? `${issueStats.completed} completed` : 'None yet'}
             changeType="positive"
             icon={GitPullRequest}
             delay={0.1}
           />
           <StatsCard
             title="PRs Created"
-            value={132}
-            change="89% success rate"
+            value={prStats?.total || 0}
+            change={prStats?.merged ? `${prStats.merged} merged` : 'None yet'}
             changeType="positive"
             icon={CheckCircle2}
             delay={0.2}
           />
           <StatsCard
-            title="Avg. Processing Time"
-            value="4.2m"
-            change="-12% improvement"
-            changeType="positive"
+            title="Pending Issues"
+            value={issueStats?.pending || 0}
+            change="Awaiting processing"
+            changeType="neutral"
             icon={Clock}
             delay={0.3}
           />
@@ -104,7 +90,7 @@ const Dashboard = () => {
         {/* Charts and Issues */}
         <div className="grid gap-8 lg:grid-cols-2">
           <ActivityChart />
-          <IssuesList issues={demoIssues} />
+          <IssuesList issues={formattedIssues} />
         </div>
       </div>
     </DashboardLayout>

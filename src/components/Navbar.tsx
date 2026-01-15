@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Bot, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,12 +11,12 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
               <Bot className="h-5 w-5 text-primary" />
             </div>
             <span className="text-lg font-bold">AgentFlow</span>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden items-center gap-8 md:flex">
@@ -35,16 +36,16 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden items-center gap-3 md:flex">
-            <a href="/signin">
+            <Link to="/signin">
               <Button variant="ghost" size="sm">
                 Sign In
               </Button>
-            </a>
-            <a href="/signup">
+            </Link>
+            <Link to="/signup">
               <Button variant="hero" size="sm">
                 Get Started
               </Button>
-            </a>
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -73,12 +74,16 @@ const Navbar = () => {
                 Docs
               </a>
               <div className="flex flex-col gap-2 pt-4">
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-                <Button variant="hero" size="sm">
-                  Get Started
-                </Button>
+                <Link to="/signin">
+                  <Button variant="ghost" size="sm" className="w-full">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button variant="hero" size="sm" className="w-full">
+                    Get Started
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
