@@ -15,60 +15,52 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { GitBranch, Plus, Trash2, ExternalLink } from 'lucide-react';
-import { toast } from 'sonner';
-
-interface Repo {
-  id: string;
-  name: string;
-  url: string;
-  isActive: boolean;
-  issuesProcessed: number;
-}
-
-const demoRepos: Repo[] = [
-  { id: '1', name: 'acme/web-app', url: 'https://github.com/acme/web-app', isActive: true, issuesProcessed: 45 },
-  { id: '2', name: 'acme/api-gateway', url: 'https://github.com/acme/api-gateway', isActive: true, issuesProcessed: 32 },
-  { id: '3', name: 'acme/docs', url: 'https://github.com/acme/docs', isActive: false, issuesProcessed: 18 },
-  { id: '4', name: 'acme/backend', url: 'https://github.com/acme/backend', isActive: true, issuesProcessed: 52 },
-];
+import { GitBranch, Plus, Trash2, ExternalLink, Loader2 } from 'lucide-react';
+import { useRepos, useAddRepo, useToggleRepo, useDeleteRepo } from '@/hooks/useRepos';
 
 const Repositories = () => {
-  const [repos, setRepos] = useState<Repo[]>(demoRepos);
   const [newRepoUrl, setNewRepoUrl] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const { data: repos, isLoading } = useRepos();
+  const addRepo = useAddRepo();
+  const toggleRepo = useToggleRepo();
+  const deleteRepo = useDeleteRepo();
+
   const handleAddRepo = () => {
     if (!newRepoUrl.includes('github.com')) {
-      toast.error('Please enter a valid GitHub repository URL');
       return;
     }
 
-    const repoName = newRepoUrl.replace('https://github.com/', '');
-    const newRepo: Repo = {
-      id: Date.now().toString(),
-      name: repoName,
-      url: newRepoUrl,
-      isActive: true,
-      issuesProcessed: 0,
-    };
-
-    setRepos([...repos, newRepo]);
-    setNewRepoUrl('');
-    setDialogOpen(false);
-    toast.success('Repository connected successfully!');
+    const repoName = newRepoUrl.replace('https://github.com/', '').replace('http://github.com/', '');
+    addRepo.mutate(
+      { repoName, repoUrl: newRepoUrl },
+      {
+        onSuccess: () => {
+          setNewRepoUrl('');
+          setDialogOpen(false);
+        },
+      }
+    );
   };
 
-  const toggleRepo = (id: string) => {
-    setRepos(repos.map(repo => 
-      repo.id === id ? { ...repo, isActive: !repo.isActive } : repo
-    ));
+  const handleToggle = (id: string, currentStatus: boolean | null) => {
+    toggleRepo.mutate({ id, isActive: !currentStatus });
   };
 
-  const deleteRepo = (id: string) => {
-    setRepos(repos.filter(repo => repo.id !== id));
-    toast.success('Repository disconnected');
+  const handleDelete = (id: string) => {
+    deleteRepo.mutate(id);
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -116,8 +108,19 @@ const Repositories = () => {
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button variant="hero" onClick={handleAddRepo}>
-                  Connect
+                <Button 
+                  variant="hero" 
+                  onClick={handleAddRepo}
+                  disabled={addRepo.isPending}
+                >
+                  {addRepo.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    'Connect'
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -126,7 +129,7 @@ const Repositories = () => {
 
         {/* Repos List */}
         <div className="grid gap-4">
-          {repos.map((repo, index) => (
+          {repos?.map((repo, index) => (
             <motion.div
               key={repo.id}
               initial={{ opacity: 0, y: 20 }}
@@ -141,13 +144,13 @@ const Repositories = () => {
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold truncate">{repo.name}</h3>
-                    <Badge variant={repo.isActive ? 'default' : 'secondary'}>
-                      {repo.isActive ? 'Active' : 'Paused'}
+                    <h3 className="font-semibold truncate">{repo.repo_name}</h3>
+                    <Badge variant={repo.is_active ? 'default' : 'secondary'}>
+                      {repo.is_active ? 'Active' : 'Paused'}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {repo.issuesProcessed} issues processed
+                    Connected {new Date(repo.created_at).toLocaleDateString()}
                   </p>
                 </div>
 
@@ -158,8 +161,9 @@ const Repositories = () => {
                     </Label>
                     <Switch
                       id={`active-${repo.id}`}
-                      checked={repo.isActive}
-                      onCheckedChange={() => toggleRepo(repo.id)}
+                      checked={repo.is_active ?? false}
+                      onCheckedChange={() => handleToggle(repo.id, repo.is_active)}
+                      disabled={toggleRepo.isPending}
                     />
                   </div>
 
@@ -167,7 +171,7 @@ const Repositories = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => window.open(repo.url, '_blank')}
+                      onClick={() => window.open(repo.repo_url, '_blank')}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
@@ -175,7 +179,8 @@ const Repositories = () => {
                       variant="ghost"
                       size="icon"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => deleteRepo(repo.id)}
+                      onClick={() => handleDelete(repo.id)}
+                      disabled={deleteRepo.isPending}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -186,7 +191,7 @@ const Repositories = () => {
           ))}
         </div>
 
-        {repos.length === 0 && (
+        {(!repos || repos.length === 0) && (
           <div className="glass-card rounded-xl border border-border/50 p-12 text-center">
             <GitBranch className="mx-auto h-12 w-12 text-muted-foreground/50" />
             <h3 className="mt-4 text-lg font-medium">No repositories connected</h3>
