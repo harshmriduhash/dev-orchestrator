@@ -10,7 +10,8 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronDown
+  ChevronDown,
+  BarChart3
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -28,6 +29,7 @@ interface DashboardLayoutProps {
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Repositories', href: '/dashboard/repos', icon: GitBranch },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
