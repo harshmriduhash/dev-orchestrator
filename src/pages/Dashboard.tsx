@@ -3,10 +3,12 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import StatsCard from '@/components/dashboard/StatsCard';
 import IssuesList from '@/components/dashboard/IssuesList';
 import ActivityChart from '@/components/dashboard/ActivityChart';
+import OnboardingModal from '@/components/onboarding/OnboardingModal';
 import { GitBranch, GitPullRequest, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { useRepos } from '@/hooks/useRepos';
 import { useIssues, useIssueStats } from '@/hooks/useIssues';
 import { usePRStats } from '@/hooks/usePullRequests';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import { formatDistanceToNow } from 'date-fns';
 
 const Dashboard = () => {
@@ -14,6 +16,7 @@ const Dashboard = () => {
   const { data: issues, isLoading: issuesLoading } = useIssues();
   const { data: issueStats } = useIssueStats();
   const { data: prStats } = usePRStats();
+  const { showOnboarding, completeOnboarding } = useOnboarding();
 
   const formattedIssues = issues?.map(issue => ({
     id: issue.id,
@@ -38,6 +41,7 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
+      <OnboardingModal open={showOnboarding} onComplete={completeOnboarding} />
       <div className="space-y-8">
         {/* Header */}
         <motion.div
